@@ -1,0 +1,42 @@
+{%extends 'base.html' %}
+{% load static %}
+{%block css%}
+<style>
+    h1 {
+        margin-top: 2rem;
+    }
+
+    h2{
+        margin-top: 5rem;
+        font-size: 1.5rem;
+        text-align:justify;
+    }
+</style>
+{%endblock%}
+{%block content%}
+    {%if inmueble_encontrado != None %}
+        <h1 class="text-center" >{{inmueble_encontrado.nombre}}</h1>
+        <div class="container">
+        <div class="row">
+            <div class="col-6">             
+                <div style="width: 28rem; margin-top: 5rem;">
+                    <img src="{% static 'css/images/generica.jpg' %}" class="card-img-top" alt="...">
+                </div>
+            </div>
+            <div class="col-6">
+                
+                <ul>
+                    <li class="list-group-item">
+                        <h2>{{inmueble_encontrado.descripcion}}</h2>                
+                    </li>
+                    <li class="list-group-item mt-3">
+                        <h2>${{inmueble_encontrado.precio}}</h2>                
+                    </li>
+                </ul>
+            </div>
+        </div>
+        </div>
+    {% endif %}
+{%endblock%}
+
+

@@ -1,0 +1,7 @@
+Nombre: Casa Acogedora  Descripción: Amplia casa con jardín  Región: De Tarapacá
+Nombre: Departamento Moderno  Descripción: Departamento céntrico con vista al mar  Región: De Atacama
+Nombre: Loft Urbano  Descripción: Loft en el corazón de la ciudad  Región: De Coquimbo
+Nombre: Apartamento Elegante  Descripción: Apartamento con acabados de lujo  Región: De Valparaíso
+Nombre: Casa Familiar  Descripción: Amplia casa para toda la familia  Región: De Valparaíso
+Nombre: Estudio Acogedor  Descripción: Estudio ideal para solteros  Región: De Valparaíso
+Nombre: Penthouse con Vistas  Descripción: Penthouse con terraza panorámica  Región: De Valparaíso

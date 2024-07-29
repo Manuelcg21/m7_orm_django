@@ -1,5 +1,118 @@
-{% extends 'base.html' %}
+{%extends 'base.html'%}
 
-{% block content %}
-  <h2>Pagina Inicial</h2>
-  {% endblock %}
+{% load static %}
+{%block content%}
+{%if user.is_authenticated %}
+<h1>Bienvenido, {{user.first_name}} {{user.last_name}}</h1>
+<div>
+    <h3 class="text-center" style="margin-top: 2rem;">
+        {%if user.usuario.rol == 'arrendador' %}
+        <!-- Tus Propiedades -->
+        {% elif user.usuario.rol == 'arrendatario' %}
+        Propiedades Solicitadas
+        {%else%}
+        <!-- Todas -->
+        {%endif%}
+    </h3>
+    <div class="row">
+        <div class="col-md-4">
+            <h3>Filtra las propiedades</h3>
+            <form action="/" method="get">
+                {% csrf_token%}
+                <div class="mb-3">
+                    <label for="region_cod" class="form-label">Región</label>
+                    <select name="region_cod" id="region_cod" class="form-select">
+                        <option value="">Selecciona una región</option>
+                        {%for region in regiones%}
+                        <option value="{{ region.cod }}">{{ region.nombre }}</option>
+                        {%endfor%}
+
+                    </select>
+
+                    <div class="mb-3">
+                        <label for="comuna_cod" class="form-label">Comuna</label>
+                        <select name="comuna_cod" id="comuna_cod" class="form-select">
+                            <option value="">Selecciona una comuna</option>
+                            {%for comuna in comunas%}
+                            <option value="{{ comuna.cod }}">{{ comuna.nombre }}</option>
+                            {%endfor%}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="palabra" class="form-label">Palabra</label>
+                        <input type="text" class="form-control" name="palabra" id="palabra" />
+                    </div>
+                </div>
+                <input type="submit" value="Buscar" class="btn btn-success">
+            </form>
+        </div>
+        <div class="col-md-8">
+
+            <div class="row">
+            {%for inmueble in inmuebles%}
+                <div class="col">
+                    <div class="card my-3" style="width: 15rem;">
+                        <!-- <img src="{% static 'img/generica1.png' %}" class="card-img-top" alt="imagen de ejemplo"> -->
+                        <div class="card-body">
+                            <h5 class="card-title">{{ inmueble.nombre }}</h5>
+                            <p class="card-text">{{ inmueble.descripcion }}</p>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">{{ inmueble.comuna.nombre }}</li>
+                            <li class="list-group-item">$ {{ inmueble.precio }}</li>
+                        </ul>
+                        <div class="card-body">
+                            <a href="{% url 'detalle_inmueble' inmueble.id %}" class="card-link">Ver detalle</a>
+                            <a href="#" class="card-link">Arrendar</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <h3>No se encontraron propiedades con esos filtros.</h3>
+                {%endfor%}
+            </div>
+        </div>
+    </div>
+</div>
+
+{%endif%}
+{%endblock%}
+
+{%block js%}
+
+
+
+<script>
+    function filtrar_comunas() {
+        //recuperamos el valor seleccionado de la region
+        const cod_seleccionado = $(this).val()
+        //ahora iteramos sobre todas las comunas , y mostramos sólo aquellas cuyo código tenga como prefijo el código de la región seleccionada
+        $('#comuna_cod option').each(function () {
+            const comuna = $(this)
+            const cod_comuna = comuna.val()
+            if (cod_seleccionado == cod_comuna.substring(0, 2)) {
+                //La comuna es parte de la región
+                comuna.show()
+            } else {
+                comuna.hide()
+            }
+        })
+    }
+    $('#region_cod').on('change', filtrar_comunas)
+</script>
+<!-- <script>
+	function filtrar_comunas() {
+		const cod_seleccionado = this.value;
+		const comunas = document.querySelectorAll('#comuna_cod option');
+		comunas.forEach(function(comuna) {
+			const cod_comuna = comuna.value;
+			if (cod_seleccionado === cod_comuna.substring(0, 2)) {
+				comuna.style.display = '';
+			} else {
+				comuna.style.display = 'none';
+			}
+		});
+	}
+</script> -->
+{%endblock%}

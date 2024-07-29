@@ -3,6 +3,9 @@ from main.models import UserProfile, Inmueble, Comuna
 from django.db.utils import IntegrityError
 from django.db.models import Q
 from django.db import connection
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+
 
 def crear_inmueble(nombre, descripcion, m2_construidos, m2_totales, num_estacionamientos, num_habitaciones, num_baños, direccion, tipo_inmueble, precio, comuna_cod, propietario_rut):
     
@@ -11,43 +14,85 @@ def crear_inmueble(nombre, descripcion, m2_construidos, m2_totales, num_estacion
 
     Inmueble.objects.create(nombre=nombre, descripcion=descripcion, m2_construidos=m2_construidos, m2_totales=m2_totales, num_estacionamientos=num_estacionamientos, num_habitaciones=num_habitaciones, num_baños=num_baños, direccion=direccion, tipo_inmueble=tipo_inmueble, precio=precio, comuna=comuna, propietario=propietario)
 
-def editar_inmueble(*args):
-    pass
+def editar_inmueble(inmueble_id, nombre, descripcion, m2_construidos, m2_totales, num_estacionamientos, num_habitaciones, num_baños, direccion, tipo_inmueble, precio, comuna, propietario_rut):
+    inmueble = Inmueble.objects.get(id=inmueble_id)
+    comuna = Comuna.objects.get(nombre=comuna)
+    inmueble.nombre = nombre
+    inmueble.descripcion = descripcion 
+    inmueble.m2_construidos = m2_construidos
+    inmueble.m2_totales = m2_totales
+    inmueble.num_estacionamientos = num_estacionamientos
+    inmueble.num_habitaciones = num_habitaciones
+    inmueble.num_baños = num_baños
+    inmueble.direccion = direccion 
+    inmueble.tipo_inmueble = tipo_inmueble
+    inmueble.precio = precio
+    inmueble.comuna = comuna
+    inmueble.propietario = propietario_rut
+    inmueble.save()
 
-def eliminar_inmuebles(inmuebles_id):
-    pass
+def eliminar_inmuebles(inmueble_id):
+    
+    inmueble = Inmueble.objects.get(id=inmueble_id)
+    inmueble.delete()
 
-def crear_user(username, first_name, last_name, email, password, pass_confirm, direccion, telefono=None) -> list[bool, str]:
-    # 1. Validamos que las password coincidan
+def crear_user(username, first_name, last_name, email, password, pass_confirm, direccion, rol ,telefono= None)-> list[bool, str]:
+    #1. Validamos si las password coinciden
     if password != pass_confirm:
-        return False, 'Las contraseñas no coinciden'
-    # 2. creamos el objeto user
+        return False
+    #2. creamos el objeto user
     try:
-        user = User.objects.create_user(username, email, password, first_name=first_name, last_name=last_name)
+        user = User.objects.create_user(
+        username, email, password,
+        first_name=first_name,
+        last_name=last_name,
+    )
     except IntegrityError:
-        # se le da feedback al usuario
-        return False, 'RUT duplicado'
-    # 3. Creamos el UserProfile
-    UserProfile.objects.create(user=user, direccion=direccion, telefono=telefono)
-    # 4. Si todo sale bien, retornamos True
-    return True, None
+        #se le da feedback al usuario
+        return False, 'RUT DUPLICADO'
+        #3.  Creamos el UserProfile
+    UserProfile.objects.create(
+        direccion=direccion,
+        telefono=telefono,
+        user=user,
+        rol = rol,
+        )
+    return True
 
-def editar_user(username, first_name, last_name, email, password, direccion, telefono=None) -> list[bool, str]:
-    # 1. Nos traemos el 'user' y modificamos sus datos
-    user = User.objects.get(username=username)
-    user.first_name = first_name
-    user.last_name = last_name
-    user.email = email
+def editar_user(rut, first_name, last_name, email, password, direccion, telefono= None)->list[bool, str]:   
+    user = User.objects.get(username=rut)
+    # Actualizar los campos del usuario utilizando update
+    User.objects.filter(username=rut).update(
+        first_name=first_name,
+        last_name=last_name,
+        email=email       
+    )
     user.set_password(password)
     user.save()
-    # 2. Nos traemos el 'user_profile' y modificamos sus datos
-    user_profile = UserProfile.objects.get(user=user)
-    user_profile.direccion = direccion
-    user_profile.telefono = telefono
-    user_profile.save()
+    # Actualizar el perfil del usuario utilizando update
+    UserProfile.objects.filter(user=user).update(
+        direccion=direccion,
+        telefono=telefono
+    )
+    return user
 
+def editar_user_sin_password(rut, first_name, last_name, email, direccion, rol, telefono= None)->list[bool, str]:
+    user = User.objects.get(username=rut)
+    # Actualizar los campos del usuario utilizando update
+    User.objects.filter(username=rut).update(
+    first_name=first_name,
+    last_name=last_name,
+    email=email)
+        # Actualizar el perfil del usuario utilizando update
+    UserProfile.objects.filter(user=user).update(
+        direccion=direccion,
+        telefono=telefono,
+        rol=rol
+    )
+    return user
+    
 def eliminar_user(user_id):
-    pass
+    User.objects.get(id=user_id).delete()
 
 def obtener_inmuebles_comunas(filtro):
     if filtro is None:
@@ -56,37 +101,25 @@ def obtener_inmuebles_comunas(filtro):
     # select * from main_inmueble where nombre like '%Elegante%' or descripcion like '%Elegante%';
     return Inmueble.objects.filter(Q(nombre__icontains=filtro) | Q(descripcion__icontains=filtro)).order_by('comuna')
 
-def obtener_inmuebles_region(filtro):
-        consulta = '''
-        select I.nombre, I.descripcion, R.nombre as region from main_inmueble as I
-        join main_comuna as C on I.comuna_id = C.cod
-        join main_region as R on C.region_id = R.cod
-        order by R.cod;
-    '''
-        if filtro is not None:
-            consulta = f'''
-        select I.nombre, I.descripcion, R.nombre as region from main_inmueble as I
-        join main_comuna as C on I.comuna_id = C.cod
-        join main_region as R on C.region_id = R.cod where I.nombre like '%{filtro}%' or I.descripcion like '%{filtro}%' order by R.cod;
-    '''
+def obtener_inmuebles_regiones(filtro):
+    consulta = 'select * from main_inmueble as I join main_comuna as C on I.comuna_id = C.cod join main_region as R on C.region_id = R.cod order by R.cod'
+    if filtro is not None:
+        consulta = f"select * from main_inmueble as I join main_comuna as C on I.comuna_id = C.cod join main_region as R on C.region_id = R.cod where I.nombre like'%{filtro}%' or I.descripcion like '%{filtro}%' order by R.cod"
+        #return Inmueble.objects.raw(consulta)
         cursor =connection.cursor()
         cursor.execute(consulta)
-        registros = cursor.fetchall() # LAZY LOADING
+        registros = cursor.fetchall()
         return registros
+        #return Inmueble.objects.filter(nombre__icontains=filtro).order_by('comuna')
 
-def editar_user_sin_password(username, first_name, last_name, email, direccion, rol, telefono=None) -> list[bool, str]:
-    # 1. Nos traemos el 'user' y modificamos sus datos
-    user = User.objects.get(username=username)
-    user.first_name = first_name
-    user.last_name = last_name
-    user.email = email
-    user.save()
-    # 2. Nos traemos el 'user_profile' y modificamos sus datos
-    user_profile = UserProfile.objects.get(user=user)
-    user_profile.direccion = direccion
-    user_profile.telefono = telefono
-    user_profile.rol = rol
-    user_profile.save()
-
-def eliminar_user(user_id):
-    pass
+def change_pass(req, password, pass_repeat):
+    #2. Valido que ambas contraseñas coincidan
+    if password != pass_repeat:
+        messages.error(req, 'Las contraseñas no coinciden')
+        return
+    else:
+    #3. Actualizamos la contraseña
+        req.user.set_password(password)
+        req.user.save()
+        #4. Le avisamos al usuario que el cambio fue exitoso
+        messages.success(req, 'Contraseña actualizada')

@@ -7,6 +7,7 @@ class Command(BaseCommand):
         parser.add_argument('-f', '--f', type=str, nargs='+',)
 
     def handle(self, *args, **kwargs):
+        file = open('data/inmuebles_comuna.txt', 'w', encoding='utf-8')
         filtro = None
         if 'f' in kwargs.keys() and kwargs['f'] is not None:
             filtro = kwargs['f'][0]
@@ -14,5 +15,5 @@ class Command(BaseCommand):
 
         with open('data/inmuebles_regiones.txt', 'w') as file:
             for inmueble in inmuebles:
-                linea = str(inmueble)
-                print(inmueble)
+                linea = f'Nombre: {inmueble[0]}  Descripción: {inmueble[1]}  Región: {inmueble[2]}'
+                file.write(linea + '\n')
